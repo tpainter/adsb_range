@@ -1,0 +1,6 @@
+*.pyc
+test
+html
+*.kml
+*.json
+*.zip
