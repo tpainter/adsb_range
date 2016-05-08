@@ -34,16 +34,20 @@ class AdsbConnection():
         self.address = address
         self.port = port
         self.center = center     
-        self.format = format        
-        
+        self.format = format      
+                
         self.range = antennarange.AntennaRange(self.center, 720)
         
         if self.format == 'json':
             self.lc = task.LoopingCall(self.writeJson)
         else:
             self.lc = task.LoopingCall(self.writeKml)
-        self.lc.start(5*60, now = False)
+        self.lc.start(5*60, now=False)
         
+        # Stop after 24 hours of collecting data.
+        reactor.callLater(24*60*60, reactor.stop)
+        
+        # Connect to ADSB receiver.
         point = TCP4ClientEndpoint(reactor, self.address, self.port)
         d = connectProtocol(point, basic.LineOnlyReceiver())
         d.addCallback(self.register_message_handler)
@@ -80,7 +84,7 @@ class AdsbConnection():
     def _writeKml(self):
         filename = '{}_range.kml'.format(self.name)
         print("Writing points to KML file: {}".format(filename))
-        #print self.range.range_shape()
+        
         with open(filename, 'w') as outfile:
             outfile.write('''<?xml version="1.0" encoding="UTF-8"?>
                             <kml xmlns="http://www.opengis.net/kml/2.2">

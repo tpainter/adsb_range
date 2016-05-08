@@ -17,30 +17,93 @@ from math import degrees, radians, cos, sin, asin, sqrt, atan2
 
 class AntennaRange():
 
-    def __init__(self, center, sectors = 360):
-        
-        # May not work correctly if sectors > 360
+    def __init__(self, center, sectors = 360, layers = 0):
         self.num_sector = sectors
-        # Sectors is [sector: (Lat, Long, Range)]
-        self.sectors = { x: (None, None, 0) for x in range(sectors) }
+        self.num_layer = layers
+        # Layer is [sector: (Lat, Long, Range)]
+        self.layers = [None for x in range(layers + 1)]
+        self.layers[0] = { x: (None, None, 0) for x in range(sectors) }
+        for i in range(1, layers + 1):
+            self.layers[1] = { x: (None, None, 0) for x in range(sectors) }
+        
         self.center = center
+        if self.center == (999.0, 999.0):
+            # Coordinates of center were not given. 
+            # Will try to find a reasonable guess.
+            self.center_set = False
+            self.points_cloud = []
+            print("No center coordinates given. Will estimate.")
+        else:
+            self.center_set = True
         
     def add_point(self, point):
         """
-        Takes point and processes it.
+        Take a point and process it.
         point = (lat, long, alt)
         """
+        if not self.center_set:
+            # Accumulate points until a valid center has been found.
+            self._find_center(point)
+            return
         
+        l = self._find_layer(point)
         s = self._find_sector(point)
         r = self._find_range(point)
         
-        if self.sectors[s][2] < r:
+        # Always check layer 0.
+        if self.layers[0][s][2] < r:
             # New farthest range
-            self.sectors[s] = ( point[0], point [1], r )
+            self.layers[0][s] = ( point[0], point [1], r )        
         
+        # Then check layer that is returned.
+        if self.layers[l][s][2] < r:
+            # New farthest range
+            self.layers[l][s] = ( point[0], point [1], r )
+        
+    def _find_center(self, point):
+        """
+        If no center is given initially, find a good estimate to use.
+        
+        This is just the average location over a certain number of points. 
+        """        
+        self.points_cloud.append(point)
+        
+        if len(self.points_cloud) > 500:
+            # Assume this is enough to get a valid point.
+            lat_sum = 0
+            lon_sum = 0
+            for n in self.points_cloud:
+                lat_sum += n[0]
+                lon_sum += n[1]
+                
+            lat_avg = lat_sum / float(len(self.points_cloud))
+            lon_avg = lon_sum / float(len(self.points_cloud))
+            
+            self.center = (lat_avg, lon_avg)
+            self.center_set = True
+            print("Using center: ({:.3f}, {:.3f})".format(self.center[0], self.center[1]))
+    
+    def _find_layer(self, point):
+        """
+        Find the layer for the altitude of the given point.
+        
+        Layer 0 is "all altitudes". After that, layers occur every 10,000ft.
+        Last layer is unlimited in altitude.
+        """
+        
+        if point[2] is None:
+            # No altitude information
+            return 0
+        l = int(point[2] / 10000)
+        
+        if l >= self.num_layer:
+            return self.num_layer
+        else:
+            return l        
+    
     def _find_sector(self, point):
         """
-        Returns sector that given point is located in.
+        Return the sector that given point is located in.
         """
         lat1 = radians(self.center[0])
         lon1 = radians(self.center[1])
@@ -62,7 +125,7 @@ class AntennaRange():
         
     def _find_range(self, point):
         """
-        Returns range from center to point. Haversine formula.
+        Return the distance from center to point. Haversine formula.
         From: http://stackoverflow.com/a/4913653
         Also: http://stackoverflow.com/a/21623206
         """
@@ -91,7 +154,7 @@ class AntennaRange():
             pass        
         
         points_list = []        
-        for s,p in self.sectors.iteritems():
+        for s,p in self.layers[layer].iteritems():
             points_list.append( (p[0], p[1]) ) 
             
         return points_list
