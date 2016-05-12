@@ -24,7 +24,7 @@ class AntennaRange():
         self.layers = [None for x in range(layers + 1)]
         self.layers[0] = { x: (None, None, 0) for x in range(sectors) }
         for i in range(1, layers + 1):
-            self.layers[1] = { x: (None, None, 0) for x in range(sectors) }
+            self.layers[i] = { x: (None, None, 0) for x in range(sectors) }
         
         self.center = center
         if self.center == (999.0, 999.0):
@@ -46,7 +46,7 @@ class AntennaRange():
             self._find_center(point)
             return
         
-        l = self._find_layer(point)
+        lay = self._find_layer(point)
         s = self._find_sector(point)
         r = self._find_range(point)
         
@@ -55,10 +55,10 @@ class AntennaRange():
             # New farthest range
             self.layers[0][s] = ( point[0], point [1], r )        
         
-        # Then check layer that is returned.
-        if self.layers[l][s][2] < r:
+        # Then check the layer that is returned.
+        if self.layers[lay][s][2] < r:
             # New farthest range
-            self.layers[l][s] = ( point[0], point [1], r )
+            self.layers[lay][s] = ( point[0], point [1], r )
         
     def _find_center(self, point):
         """
@@ -81,7 +81,7 @@ class AntennaRange():
             
             self.center = (lat_avg, lon_avg)
             self.center_set = True
-            print("Using center: ({:.3f}, {:.3f})".format(self.center[0], self.center[1]))
+            print("Using center: ({:.1f}, {:.1f})".format(self.center[0], self.center[1]))
     
     def _find_layer(self, point):
         """
@@ -94,12 +94,12 @@ class AntennaRange():
         if point[2] is None:
             # No altitude information
             return 0
-        l = int(point[2] / 10000)
+        lay = int(point[2] / 10000)
         
-        if l >= self.num_layer:
+        if lay >= self.num_layer:
             return self.num_layer
         else:
-            return l        
+            return lay        
     
     def _find_sector(self, point):
         """
@@ -149,10 +149,6 @@ class AntennaRange():
         Can also report just the altitudes layer requested. 
         0 = All altitudes
         """
-        
-        if layer == 0:
-            pass        
-        
         points_list = []        
         for s,p in self.layers[layer].iteritems():
             points_list.append( (p[0], p[1]) ) 

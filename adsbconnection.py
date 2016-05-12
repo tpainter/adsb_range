@@ -34,9 +34,10 @@ class AdsbConnection():
         self.address = address
         self.port = port
         self.center = center     
-        self.format = format      
-                
-        self.range = antennarange.AntennaRange(self.center, 720)
+        self.format = format    
+
+        self.layers = 5
+        self.range = antennarange.AntennaRange(self.center, 720, self.layers)
         
         if self.format == 'json':
             self.lc = task.LoopingCall(self.writeJson)
@@ -45,7 +46,7 @@ class AdsbConnection():
         self.lc.start(5*60, now=False)
         
         # Stop after 24 hours of collecting data.
-        reactor.callLater(24*60*60, reactor.stop)
+        reactor.callLater(24*60*60, self.close_connection)
         
         # Connect to ADSB receiver.
         point = TCP4ClientEndpoint(reactor, self.address, self.port)
@@ -76,7 +77,7 @@ class AdsbConnection():
         filename = '{}_range.json'.format(self.name)
         print("Writing points to json file: {}".format(filename))
         with open(filename, 'w') as outfile:
-            json.dump(self.range.range_shape(), outfile)
+            json.dump(self.range.range_shape(0), outfile)
             
     def writeKml(self):
         d = threads.deferToThread(self._writeKml)
@@ -84,30 +85,38 @@ class AdsbConnection():
     def _writeKml(self):
         filename = '{}_range.kml'.format(self.name)
         print("Writing points to KML file: {}".format(filename))
-        
         with open(filename, 'w') as outfile:
             outfile.write('''<?xml version="1.0" encoding="UTF-8"?>
                             <kml xmlns="http://www.opengis.net/kml/2.2">
-                              <Placemark>
-                                <name>{}</name>
+                            <Folder><name>{} Ranges</name>'''.format(self.name))
+            for n in range(self.layers+1):
+                outfile.write('''<Placemark>
+                                <name>{}_{}ft</name>
                                 <Polygon>
                                   <extrude>1</extrude>
+                                  <tessellate>1</tessellate>
                                   <altitudeMode>relativeToGround</altitudeMode>
                                   <outerBoundaryIs>
                                     <LinearRing>
-                                      <coordinates>'''.format(self.name))
-            
-            for i in self.range.range_shape():
-                # KML takes points in the form of [long],[lat],[alt]
-                if i[0] is not None:
-                    outfile.write("{},{},100 ".format(i[1], i[0]))
-            
-            outfile.write('''
+                                      <coordinates>'''.format(self.name, n*10000))
+                for i in self.range.range_shape(n):
+                    # KML takes points in the form of [long],[lat],[alt]
+                    if i[0] is not None:
+                        outfile.write("{},{},{:.1f} ".format(i[1], i[0], n*10000/0.3048))        
+                outfile.write('''
                                       </coordinates>
                                     </LinearRing>
                                   </outerBoundaryIs>
                                 </Polygon>
-                              </Placemark>
-                            </kml>'''
-                            )
+                                </Placemark>''')
+            outfile.write('''</Folder></kml>''')
+                            
+    def close_connection(self):
+        """ Close the connection to the ADSB receiver and cleanup.
+        """
+        print("Stopping the program.")
+        self._writeKml()
+        reactor.stop()
+        
+        
         
