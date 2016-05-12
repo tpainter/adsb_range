@@ -1,5 +1,5 @@
 # adsb_range
-*Compare the range of ADS-B receivers.*
+*Display the range of ADS-B receivers in a kml file.*
 
 ## Description
 adsb_range is a short python program that connects to an ADSB receiver that produces output in basestation (csv) format. As it gathers aircraft positions, it keeps track of the farthest points away from the receiver.
@@ -10,7 +10,10 @@ It periodically writes the coordinates of these points to a *.kml file for easy 
 Requires the installation of Twisted. `pip install twisted`
 
 ## Usage
+Basic usage is to specify the address of an ADSB receiver that is providing basestation data on the default port. The location of the receiver will be 'guessed' based on the messages being received.
+`python adsb_range.py -a [ip address of adsb receiver]`
 
+The receiver's location can also be given.
 `python adsb_range.py -a [ip address of adsb receiver] --lat [latitude of antenna in decimal] --lon [longitude of antenna in decimal]`
 
 Example:
