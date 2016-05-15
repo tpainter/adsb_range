@@ -16,9 +16,13 @@ import time
 import sys
 import json, time
 
-from twisted.internet import reactor, threads, task
-from twisted.internet.endpoints import TCP4ClientEndpoint, connectProtocol
-from twisted.protocols import basic
+try:
+    from twisted.internet import reactor, threads, task
+    from twisted.internet.endpoints import TCP4ClientEndpoint, connectProtocol
+    from twisted.protocols import basic
+except ImportError:
+    # Only required if Twisted isn't availible
+    import socket
 
 import py1090 #This has been modified slightly to remove 'enum'
 import antennarange
@@ -114,9 +118,64 @@ class AdsbConnection():
     def close_connection(self):
         """ Close the connection to the ADSB receiver and cleanup.
         """
-        print("Stopping the program.")
         self._writeKml()
+        print("Stopping the program.")
         reactor.stop()
         
+        
+class AdsbConnectionNoTwisted(AdsbConnection):
+    """
+    Connection handler for when Twisted module is not availible.
+    """
+    
+    def __init__(self, name, address, port, center, format):
+        self.name = name
+        self.address = address
+        self.port = port
+        self.center = center     
+        self.format = format    
+
+        self.layers = 5
+        self.range = antennarange.AntennaRange(self.center, 720, self.layers)
+        
+        self.writeOutputInterval = 5 * 60
+        self.lastOutput = None
+        self.stopCollectionInterval = 24 * 60 * 60
+        self.startTime = None
+        
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.connect((self.address, self.port))
+        self.connection = self.socket.makefile()
+        self._loop()
+        
+    def _loop(self):
+        """
+        
+        """
+        self.startTime = time.time()
+        self.lastOutput = time.time()
+        try:
+            for line in self.connection:
+                self.message(line)
+                
+                if time.time() > (self.lastOutput + self.writeOutputInterval):
+                    # Time to write a file again.
+                    self._writeKml()
+                    self.lastOutput = time.time()
+                
+                if time.time() > (self.startTime + self.stopCollectionInterval):
+                    # End program
+                    self.close_connection()
+                    break
+        except KeyboardInterrupt:
+            self.close_connection()
+                
+        
+    def close_connection(self):
+        """ Close the connection to the ADSB receiver and cleanup.
+        """
+        self._writeKml()
+        self.socket.close()
+        print("Stopping the program.")
         
         

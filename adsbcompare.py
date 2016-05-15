@@ -14,8 +14,14 @@
 
 import argparse
 
-from twisted.internet import reactor
-from adsbconnection import AdsbConnection
+try:
+    from twisted.internet import reactor
+except ImportError:
+    TWISTED_PRESENT = False
+else:
+    TWISTED_PRESENT = True
+    
+from adsbconnection import AdsbConnection, AdsbConnectionNoTwisted
 
 if __name__ == "__main__":
 
@@ -40,7 +46,11 @@ if __name__ == "__main__":
     connectionlist = []
     
     for c in connections:
-        h = AdsbConnection(c[0], c[1], c[2], c[3], c[4])
+        if TWISTED_PRESENT:
+            h = AdsbConnection(c[0], c[1], c[2], c[3], c[4])
+        else:
+            h = AdsbConnectionNoTwisted(c[0], c[1], c[2], c[3], c[4])
         connectionlist.append(h)        
     
-    reactor.run()
+    if TWISTED_PRESENT:
+        reactor.run()

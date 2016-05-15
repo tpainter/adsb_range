@@ -150,7 +150,7 @@ class AntennaRange():
         0 = All altitudes
         """
         points_list = []        
-        for s,p in self.layers[layer].iteritems():
+        for p in self.layers[layer].values():
             points_list.append( (p[0], p[1]) ) 
             
         return points_list
