@@ -23,8 +23,13 @@ else:
     
 from adsbconnection import AdsbConnection, AdsbConnectionNoTwisted
 
-if __name__ == "__main__":
+def printWelcome():
+    """
+    Print initial program load text.
+    """
+    print("ADSB Range: Display the range of ADS-B receivers.")    
 
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog = "ADSBrange", 
         description = "Save a map shape showing the range of ADSB messages received.")
     parser.add_argument('-n', '--name', help="Name of the receiver.", default='ADSB')
@@ -39,11 +44,14 @@ if __name__ == "__main__":
         format = 'json'
     else:
         format= 'kml'
-        
-    connections = []
-    connections.append([args.name, args.address, args.port, (args.lat, args.lon), format])
     
+    printWelcome()
+    
+    connections = []
+    connections.append([args.name, args.address, args.port, (args.lat, args.lon), format])    
     connectionlist = []
+    
+    print("Connecting to receiver...")
     
     for c in connections:
         if TWISTED_PRESENT:

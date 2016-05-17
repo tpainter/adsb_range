@@ -7,7 +7,7 @@ adsb_range is a short python program that connects to an ADSB receiver that prod
 It periodically (every 5 minutes) writes the coordinates of these points to a *.kml file for easy viewing in maping programs. Collection will stop after 24 hours.
 
 ## Requirements
-Requires the installation of Twisted. `pip install twisted`
+No specific packages are required, but if Twisted is installed, it will be used.
 
 ## Usage
 Basic usage is to specify the address of an ADSB receiver that is providing basestation data on the default port. The location of the receiver will be 'guessed' based on the messages being received.

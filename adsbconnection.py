@@ -24,7 +24,7 @@ except ImportError:
     # Only required if Twisted isn't availible
     import socket
 
-import py1090 #This has been modified slightly to remove 'enum'
+import py1090 #This has been modified slightly to remove 'enum' import.
 import antennarange
 
 
