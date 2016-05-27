@@ -34,7 +34,7 @@ if __name__ == "__main__":
         description = "Save a map shape showing the range of ADSB messages received.")
     parser.add_argument('-n', '--name', help="Name of the receiver.", default='ADSB')
     parser.add_argument('-a', '--address', help="IP address of the receiver.", required=True)
-    parser.add_argument('-p', '--port', help="Basestation port of the receiver. Default 30003", default=30003)
+    parser.add_argument('-p', '--port', help="Basestation port of the receiver. Default 30003", type=int, default=30003)
     parser.add_argument('--lat', help="Latitude of the receiver's location in decimal. Example: 40.123", type=float, default=999.0)
     parser.add_argument('--lon', help="Longitude of the receiver's location in decimal. Example: -90.123", type=float, default=999.0)
     parser.add_argument('-j', '--json', help="Output range in JSON format instead of kml.", action='store_true')

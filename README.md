@@ -21,6 +21,9 @@ The receiver's location can also be given.
 Example:
 `python adsb_range.py -a 192.168.0.100 --lat 45.678 --lon -87.654`
 
+or:
+`python adsb_range.py -a 192.168.0.100 -p 30003 --lat 45.678 --lon -87.654 -n filteradded`
+
 ## References
 Uses py1090 message library from https://github.com/jojonas/py1090
 
